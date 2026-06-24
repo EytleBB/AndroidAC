@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="ink">#FF111111</color>      <!-- 近黑：正文 -->
+    <color name="muted">#FF8A8A8A</color>    <!-- 次要灰 -->
+    <color name="hairline">#FFE6E6E6</color> <!-- 极细分隔线 -->
+    <color name="surface_soft">#FFF5F5F5</color>
+</resources>

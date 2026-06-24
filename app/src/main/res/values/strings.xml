@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">连点器</string>
+
+    <string name="accessibility_service_label">连点器 无障碍服务</string>
+    <string name="accessibility_service_description">用于在你指定的屏幕位置模拟点击（dispatchGesture）。本服务完全离线，不读取屏幕内容、不联网。</string>
+
+    <string name="guide_intro">首次使用需开启以下两项权限。</string>
+
+    <string name="guide_step_overlay">① 悬浮窗权限</string>
+    <string name="guide_step_accessibility">② 无障碍服务</string>
+
+    <string name="status_granted">状态：已授予 ✓</string>
+    <string name="status_not_granted">状态：未授予 ✗</string>
+    <string name="status_enabled">状态：已开启 ✓</string>
+    <string name="status_not_enabled">状态：未开启 ✗</string>
+
+    <string name="btn_open_overlay">去开启悬浮窗权限</string>
+    <string name="btn_open_accessibility">去开启无障碍服务</string>
+
+    <string name="guide_step_interval">③ 点击间隔</string>
+    <string name="interval_value_fmt">当前间隔：%1$d ms（数值越小点击越快）</string>
+    <string name="guide_usage">用法：开启权限后屏幕中央出现十字标记与悬浮控制球。\n• 单击控制球：开始/停止连点\n• 长按控制球：进入/退出「拖动定位模式」，可拖动十字到目标位置\n• 锁定后点击会穿透标记落到下层应用</string>
+
+    <string name="hint_restricted_settings">提示：若你是侧载（非应用商店）安装，开启无障碍前可能被「受限设置」拦截。请到「设置 → 应用 → 连点器 → 右上角菜单 → 允许受限设置」后，再回到无障碍页面开启本服务。</string>
+    <string name="hint_all_ready">两项权限均已就绪，可以开始使用。</string>
+</resources>
