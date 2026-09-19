@@ -18,9 +18,17 @@
     <string name="btn_open_overlay">去开启悬浮窗权限</string>
     <string name="btn_open_accessibility">去开启无障碍服务</string>
 
-    <string name="guide_step_interval">③ 点击间隔</string>
-    <string name="interval_value_fmt">当前间隔：%1$d ms（数值越小点击越快）</string>
-    <string name="guide_usage">用法：开启权限后屏幕中央出现十字标记与悬浮控制球。\n• 单击控制球：开始/停止连点\n• 长按控制球：进入/退出「拖动定位模式」，可拖动十字到目标位置\n• 锁定后点击会穿透标记落到下层应用</string>
+    <string name="guide_step_interval">③ 相邻两次点击的间隔</string>
+    <string name="interval_value_fmt">每次点击完成后等待 %1$d ms，再点击下一个编号</string>
+    <string name="guide_usage">用法：开启权限后出现编号点击点与悬浮控制栏。\n• ＋：添加点击点，拖动各编号到目标按钮上\n• －：删除最后一个点击点，至少保留 1 个\n• 编辑 / 完成：调整或锁定所有点击点，也可长按 ▶ 切换\n• ▶ / ■：按 1 → 2 → 3 → … → 1 循环点击 / 停止；再次启动从 1 号开始\n• 拖动 ▶ 可移动控制栏，请避开点击点\n• 点击点位置自动保存；最多添加 50 个</string>
+
+    <string name="point_limit">最多可添加 %1$d 个点击点</string>
+    <string name="point_added">已添加 %1$d 号点击点，拖动到目标位置后点「完成」</string>
+    <string name="locate_started">定位模式：拖动各编号到目标位置，再点「完成」</string>
+    <string name="locate_finished">已锁定所有点击点，点 ▶ 按编号循环点击</string>
+    <string name="open_target_first">请先打开需要连点的应用，再点 ▶</string>
+    <string name="overlay_failed">无法显示悬浮窗，请检查权限后重新打开连点器</string>
+    <string name="screen_changed">屏幕尺寸已改变，已停止连点，请重新确认各点击点位置</string>
 
     <string name="hint_restricted_settings">提示：若你是侧载（非应用商店）安装，开启无障碍前可能被「受限设置」拦截。请到「设置 → 应用 → 连点器 → 右上角菜单 → 允许受限设置」后，再回到无障碍页面开启本服务。</string>
     <string name="hint_all_ready">两项权限均已就绪，可以开始使用。</string>
