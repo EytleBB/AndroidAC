@@ -15,7 +15,7 @@ import com.casual.autoclicker.clicker.ClickLoop
 import com.casual.autoclicker.overlay.FloatingControlBall
 import com.casual.autoclicker.overlay.FloatingMarker
 
-/** 管理编号点击点、悬浮控制栏及串行点击循环。所有 UI 操作均在主线程执行。 */
+/** 管理编号点击点、悬浮控制球及串行点击循环。所有 UI 操作均在主线程执行。 */
 class ClickerAccessibilityService : AccessibilityService() {
 
     companion object {
@@ -80,7 +80,12 @@ class ClickerAccessibilityService : AccessibilityService() {
         )
         marker.show()
         markers.add(marker)
+        updateMarkerNumbers()
         if (editing) marker.enterEditMode()
+    }
+
+    private fun updateMarkerNumbers() {
+        markers.forEachIndexed { index, marker -> marker.setNumber(index + 1, markers.size > 1) }
     }
 
     private fun addPoint() {
@@ -133,6 +138,7 @@ class ClickerAccessibilityService : AccessibilityService() {
         stopClicking()
         setEditing(true)
         markers.removeAt(markers.lastIndex).destroy()
+        updateMarkerNumbers()
         controlBall?.setPointCount(markers.size)
         savePoints()
     }
@@ -206,8 +212,8 @@ class ClickerAccessibilityService : AccessibilityService() {
         // 屏幕方向改变后让用户重新确认位置，不继续向旧坐标发送手势。
         stopClicking()
         markers.forEach { it.ensureOnScreen() }
+        setEditing(false)
         controlBall?.ensureOnScreen()
-        setEditing(true)
         savePoints()
         toast(R.string.screen_changed)
     }

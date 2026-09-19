@@ -21,7 +21,7 @@ class FloatingMarker(
     private val windowManager =
         context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val sizePx = TypedValue.applyDimension(
-        TypedValue.COMPLEX_UNIT_DIP, 40f, context.resources.displayMetrics
+        TypedValue.COMPLEX_UNIT_DIP, 28f, context.resources.displayMetrics
     ).toInt()
     private val markerView = MarkerView(context).apply { this.number = number }
     private val layoutParams = createLayoutParams(initialPoint)
@@ -131,13 +131,14 @@ class FloatingMarker(
         return editing
     }
 
-    fun setNumber(number: Int) {
+    fun setNumber(number: Int, showNumber: Boolean) {
         markerView.number = number
+        markerView.showNumber = showNumber
     }
 
     private fun applyAppearance() {
         markerView.highlight = editing
-        markerView.alpha = if (editing) 1f else 0.85f
+        markerView.alpha = if (editing) 1f else 0.9f
     }
 
     /** 中心十字坐标以全屏左上角为原点，与 dispatchGesture 使用相同坐标系。 */
