@@ -5,6 +5,7 @@ import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.casual.autoclicker.service.ClickerAccessibilityService
 
 /**
  * 首次启动引导页 / 权限中心。
@@ -75,6 +76,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshState()
+        ClickerAccessibilityService.instance?.ensureOverlays()
     }
 
     /** 根据当前权限状态刷新 UI。 */

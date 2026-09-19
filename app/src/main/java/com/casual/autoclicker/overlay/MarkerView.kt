@@ -12,10 +12,25 @@ import kotlin.math.min
  * 自绘定位标记视图（替代矢量 drawable，确保在任何设备上都能稳定渲染）。
  *
  * 绘制内容：外环 + 十字准星（中间留缺口）+ 中心圆点，
- * 红色主体下垫白色描边以保证在任意背景上都清晰可见。
- * 进入定位模式时叠加黄色高亮（半透明填充 + 黄环）。
+ * 保持原版黑白配色、描边和定位高亮；仅多个点击点时补充小号顺序编号。
  */
 class MarkerView(context: Context) : View(context) {
+
+    var number: Int = 1
+        set(value) {
+            field = value
+            contentDescription = "第 $value 个点击点"
+            invalidate()
+        }
+    var showNumber: Boolean = false
+        set(value) {
+            field = value
+            invalidate()
+        }
+    private val numberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER
+        isFakeBoldText = true
+    }
 
     /** 是否处于定位（可拖）模式，影响高亮外观。 */
     var highlight: Boolean = false
@@ -83,5 +98,24 @@ class MarkerView(context: Context) : View(context) {
         // 中心点（白描边 + 黑填充）
         canvas.drawCircle(cx, cy, dotR + dp(1f), whiteStroke)
         canvas.drawCircle(cx, cy, dotR, centerFill)
+
+        if (showNumber) {
+            // 小号编号位于右上象限；不放大原有准星，不遮挡中心坐标。
+            numberPaint.textSize = dp(7f)
+            val text = number.toString()
+            val available = dp(9f)
+            if (numberPaint.measureText(text) > available) {
+                numberPaint.textSize *= available / numberPaint.measureText(text)
+            }
+            val labelX = cx + dp(6f)
+            val labelY = cy - dp(5f)
+            numberPaint.style = Paint.Style.STROKE
+            numberPaint.strokeWidth = dp(2f)
+            numberPaint.color = Color.WHITE
+            canvas.drawText(text, labelX, labelY, numberPaint)
+            numberPaint.style = Paint.Style.FILL
+            numberPaint.color = Color.parseColor("#111111")
+            canvas.drawText(text, labelX, labelY, numberPaint)
+        }
     }
 }

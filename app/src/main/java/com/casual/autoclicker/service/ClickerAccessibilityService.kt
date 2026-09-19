@@ -1,147 +1,228 @@
 package com.casual.autoclicker.service
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.Point
 import android.provider.Settings
 import android.util.Log
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
+import com.casual.autoclicker.R
 import com.casual.autoclicker.SettingsRepository
 import com.casual.autoclicker.clicker.ClickLoop
 import com.casual.autoclicker.overlay.FloatingControlBall
 import com.casual.autoclicker.overlay.FloatingMarker
 
-/**
- * 核心无障碍服务（Step 1 骨架）。
- *
- * 设计要点：
- *  - 本服务是整个应用的运行时载体：后续的悬浮控制球、定位标记、点击循环
- *    都将直接从「本服务的 Context」创建悬浮窗（TYPE_APPLICATION_OVERLAY）。
- *  - 无障碍服务由系统托管、常驻运行，不会被随意杀死，因此无需额外的前台服务保活。
- *  - dispatchGesture() 依赖 accessibility_service_config.xml 中的
- *    canPerformGestures="true"，模拟点击逻辑将在 Step 4 接入。
- *
- * 后续步骤将在此服务中：
- *  Step 2 -> 创建/管理 悬浮控制球
- *  Step 3 -> 创建/管理 定位标记（NOT_TOUCHABLE 穿透切换）
- *  Step 4 -> 通过 dispatchGesture 执行点击循环
- */
+/** 管理编号点击点、悬浮控制球及串行点击循环。所有 UI 操作均在主线程执行。 */
 class ClickerAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "ClickerA11yService"
 
-        /**
-         * 全局唯一实例引用。供悬浮窗 UI / 点击逻辑获取服务 Context 与 dispatchGesture。
-         * 服务销毁时置空，使用前需判空。
-         */
         @Volatile
         var instance: ClickerAccessibilityService? = null
             private set
 
-        /** 服务当前是否处于已连接（运行）状态。 */
         val isRunning: Boolean
             get() = instance != null
     }
 
-    /** 悬浮控制球（Step 2）。 */
     private var controlBall: FloatingControlBall? = null
-
-    /** 定位标记（Step 3）。 */
-    private var marker: FloatingMarker? = null
-
-    /** 点击循环（Step 4）。 */
+    private val markers = mutableListOf<FloatingMarker>()
     private var clickLoop: ClickLoop? = null
-
-    /** 当前前台应用包名（来自 TYPE_WINDOW_STATE_CHANGED 事件）。 */
-    @Volatile
+    private var editing = false
     private var foregroundPackage: String? = null
-
-    /** 开始连点时锁定的目标应用包名；前台偏离它即暂停注入。 */
-    @Volatile
     private var targetPackage: String? = null
+    private var startGeneration = 0L
 
-    /** 系统在服务成功绑定并连接后回调。此处完成实例登记并拉起悬浮窗。 */
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
-        Log.d(TAG, "无障碍服务已连接")
-        showOverlays()
+        ensureOverlays()
     }
 
-    /** 创建并显示悬浮控制球 + 定位标记（需已授予悬浮窗权限）。 */
-    private fun showOverlays() {
-        if (!Settings.canDrawOverlays(this)) {
-            Log.w(TAG, "未授予悬浮窗权限，跳过悬浮窗创建")
-            return
-        }
-        if (clickLoop == null) {
+    /** 也由主页面调用，支持先开无障碍、后授予悬浮窗权限的顺序。 */
+    fun ensureOverlays() {
+        if (!Settings.canDrawOverlays(this) || controlBall != null) return
+        try {
             clickLoop = ClickLoop(this)
-        }
-        if (marker == null) {
-            marker = FloatingMarker(this).also { it.show() }
-        }
-        if (controlBall == null) {
+            val saved = SettingsRepository.getClickPoints(this)
+            if (saved.isEmpty()) {
+                createMarker(null)
+            } else {
+                saved.forEach { createMarker(it) }
+            }
             controlBall = FloatingControlBall(
                 context = this,
                 onToggle = { running -> if (running) startClicking() else stopClicking() },
-                onLongPress = { toggleLocateMode() }
-            ).also { it.show() }
+                onLongPress = { toggleLocateMode() },
+                onAdd = { addPoint() },
+                onRemove = { removeLastPoint() }
+            ).also {
+                it.setPointCount(markers.size)
+                it.show()
+            }
+        } catch (error: RuntimeException) {
+            Log.e(TAG, "创建悬浮窗失败", error)
+            removeOverlays()
+            toast(R.string.overlay_failed)
         }
     }
 
-    /** 开始连点：确保标记已锁定(可穿透)，锁定当前前台为目标，再持续点击。 */
-    private fun startClicking() {
-        val m = marker ?: return
-        // 若仍处于定位模式，先退出以恢复穿透，避免点击落到标记自身。
-        if (m.editing) m.exitEditMode()
-        // 锁定目标应用：之后只要前台偏离它（弹出系统弹窗/切到别的 App）就暂停注入。
-        targetPackage = foregroundPackage
-        clickLoop?.start(
-            point = { m.getClickPoint() },
-            interval = { SettingsRepository.getIntervalMs(this).toLong() },
-            canDispatch = { foregroundPackage == targetPackage }
+    private fun createMarker(point: Point?) {
+        val marker = FloatingMarker(
+            context = this,
+            number = markers.size + 1,
+            initialPoint = point,
+            onPositionChanged = { savePoints() }
         )
+        marker.show()
+        markers.add(marker)
+        updateMarkerNumbers()
+        if (editing) marker.enterEditMode()
     }
 
-    /** 停止连点。 */
-    private fun stopClicking() {
-        clickLoop?.stop()
+    private fun updateMarkerNumbers() {
+        markers.forEachIndexed { index, marker -> marker.setNumber(index + 1, markers.size > 1) }
     }
 
-    /** 长按控制球：进入/退出「拖动定位模式」。退出时立刻恢复标记的穿透。 */
-    private fun toggleLocateMode() {
-        val m = marker ?: return
-        // 进入定位模式前先停止连点，并复位控制球外观，避免边拖边点。
-        if (!m.editing) {
-            stopClicking()
-            controlBall?.forceStopState()
+    private fun addPoint() {
+        if (markers.size >= SettingsRepository.MAX_POINTS) {
+            Toast.makeText(this, getString(R.string.point_limit, SettingsRepository.MAX_POINTS), Toast.LENGTH_SHORT).show()
+            return
         }
-        val editing = m.toggleEditMode()
-        val tip = if (editing) "定位模式：拖动十字到目标位置，再长按控制球完成"
-        else "已锁定，点击将穿透到下层应用（中心点：${m.getClickPoint().x}, ${m.getClickPoint().y}）"
-        Toast.makeText(this, tip, Toast.LENGTH_SHORT).show()
-        Log.d(TAG, "定位模式 editing=$editing, point=${m.getClickPoint()}")
+        stopClicking()
+        setEditing(true)
+        try {
+            createMarker(nextPointPosition())
+            controlBall?.setPointCount(markers.size)
+            savePoints()
+            Toast.makeText(this, getString(R.string.point_added, markers.size), Toast.LENGTH_SHORT).show()
+        } catch (error: RuntimeException) {
+            Log.e(TAG, "添加点击点失败", error)
+            toast(R.string.overlay_failed)
+        }
     }
 
-    /**
-     * 仅用于跟踪前台应用包名（订阅了 typeWindowStateChanged）。
-     * 注意：Toast 走 typeNotificationStateChanged、不会触发此回调；
-     * 我们的非聚焦悬浮窗也不会改变 WINDOW_STATE，故不会污染前台判断。
-     */
+    /** 从屏幕中心向外寻找空闲网格，避免新按钮一开始就盖住已有按钮。 */
+    private fun nextPointPosition(): Point {
+        val screen = Point()
+        @Suppress("DEPRECATION")
+        (getSystemService(WINDOW_SERVICE) as WindowManager).defaultDisplay.getRealSize(screen)
+        val spacing = (56 * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        val margin = spacing / 2
+        val existing = markers.map { it.getClickPoint() }
+        val candidates = mutableListOf<Point>()
+        for (y in margin..maxOf(margin, screen.y - margin) step spacing) {
+            for (x in margin..maxOf(margin, screen.x - margin) step spacing) {
+                candidates.add(Point(x, y))
+            }
+        }
+        return candidates.sortedBy {
+            val dx = (it.x - screen.x / 2).toDouble()
+            val dy = (it.y - screen.y / 2).toDouble()
+            dx * dx + dy * dy
+        }.firstOrNull { candidate ->
+            existing.none { point ->
+                val dx = (point.x - candidate.x).toDouble()
+                val dy = (point.y - candidate.y).toDouble()
+                dx * dx + dy * dy < spacing.toDouble() * spacing
+            }
+        } ?: Point(screen.x / 2, screen.y / 2)
+    }
+
+    private fun removeLastPoint() {
+        if (markers.size <= 1) return
+        stopClicking()
+        setEditing(true)
+        markers.removeAt(markers.lastIndex).destroy()
+        updateMarkerNumbers()
+        controlBall?.setPointCount(markers.size)
+        savePoints()
+    }
+
+    /** 每次启动都从 1 号开始，启动前锁定全部标记使点击可穿透。 */
+    private fun startClicking() {
+        if (markers.isEmpty() || foregroundPackage == null) {
+            controlBall?.forceStopState()
+            toast(R.string.open_target_first)
+            return
+        }
+        setEditing(false)
+        targetPackage = foregroundPackage
+        val generation = ++startGeneration
+        var remaining = markers.size
+        // updateViewLayout 在下一帧才提交穿透标志；等全部窗口完成布局后再发第一下。
+        markers.forEach { marker ->
+            marker.whenReadyForClick {
+                if (generation == startGeneration) {
+                    remaining--
+                    if (remaining == 0) {
+                        clickLoop?.start(
+                            points = { markers.map { it.getClickPoint() } },
+                            interval = { SettingsRepository.getIntervalMs(this).toLong() },
+                            canDispatch = { targetPackage != null && foregroundPackage == targetPackage }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun stopClicking() {
+        startGeneration++
+        clickLoop?.stop()
+        controlBall?.forceStopState()
+        targetPackage = null
+    }
+
+    private fun toggleLocateMode() {
+        stopClicking()
+        setEditing(!editing)
+        toast(if (editing) R.string.locate_started else R.string.locate_finished)
+    }
+
+    private fun setEditing(value: Boolean) {
+        editing = value
+        markers.forEach { if (value) it.enterEditMode() else it.exitEditMode() }
+        controlBall?.setEditing(value)
+        if (!value) savePoints()
+    }
+
+    private fun savePoints() {
+        if (markers.isNotEmpty()) SettingsRepository.setClickPoints(this, markers.map { it.getClickPoint() })
+    }
+
+    private fun toast(message: Int) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    /** 切换应用或进入系统弹窗时暂停注入，返回原应用后继续当前编号。 */
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             event.packageName?.toString()?.let { foregroundPackage = it }
         }
     }
 
-    /** 系统中断服务（如设置变更）时回调。 */
-    override fun onInterrupt() {
-        Log.d(TAG, "无障碍服务被中断")
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (markers.isEmpty()) return
+        // 屏幕方向改变后让用户重新确认位置，不继续向旧坐标发送手势。
+        stopClicking()
+        markers.forEach { it.ensureOnScreen() }
+        setEditing(false)
+        controlBall?.ensureOnScreen()
+        savePoints()
+        toast(R.string.screen_changed)
     }
 
-    /** 服务解绑时清理实例引用，并（后续）移除所有悬浮窗。 */
-    override fun onUnbind(intent: android.content.Intent?): Boolean {
-        Log.d(TAG, "无障碍服务解绑")
+    override fun onInterrupt() {
+        stopClicking()
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
         teardown()
         return super.onUnbind(intent)
     }
@@ -151,14 +232,18 @@ class ClickerAccessibilityService : AccessibilityService() {
         super.onDestroy()
     }
 
-    /** 统一清理：移除悬浮窗并清空实例引用。 */
-    private fun teardown() {
-        clickLoop?.stop()
+    private fun removeOverlays() {
+        stopClicking()
         clickLoop = null
         controlBall?.destroy()
         controlBall = null
-        marker?.destroy()
-        marker = null
-        instance = null
+        markers.forEach { it.destroy() }
+        markers.clear()
+        editing = false
+    }
+
+    private fun teardown() {
+        removeOverlays()
+        if (instance === this) instance = null
     }
 }
