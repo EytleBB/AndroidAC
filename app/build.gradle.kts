@@ -12,8 +12,8 @@ android {
         minSdk = 24
         // 故意停留在 32：降低侧载时开启无障碍的阻力，避免 Android 13+「受限设置」拦截
         targetSdk = 32
-        versionCode = 3
-        versionName = "1.1.1"
+        versionCode = 4
+        versionName = "1.1.2"
     }
 
     buildTypes {
