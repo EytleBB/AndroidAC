@@ -33,39 +33,7 @@
             android:lineSpacingMultiplier="1.25"
             android:textSize="13sp" />
 
-        <!-- ① 悬浮窗权限 -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="32dp"
-            android:background="@color/hairline" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="@string/guide_step_overlay"
-            android:textColor="@color/ink"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/overlay_status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/muted"
-            android:textSize="13sp" />
-
-        <Button
-            android:id="@+id/overlay_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textAllCaps="false"
-            android:letterSpacing="0.02"
-            android:text="@string/btn_open_overlay" />
-
-        <!-- ② 无障碍服务 -->
+        <!-- ① 唯一所需授权：无障碍服务 -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -97,7 +65,7 @@
             android:letterSpacing="0.02"
             android:text="@string/btn_open_accessibility" />
 
-        <!-- ③ 点击间隔 -->
+        <!-- ② 点击间隔 -->
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"

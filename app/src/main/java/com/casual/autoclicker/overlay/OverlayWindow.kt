@@ -9,12 +9,10 @@ import android.view.WindowManager
 
 /** 所有浮窗共享全屏坐标系，避免状态栏高度和 RTL 布局造成点击偏移。 */
 internal object OverlayWindow {
-    @Suppress("DEPRECATION")
-    fun type(context: Context): Int = when {
-        // 无障碍浮窗是可信窗口。Android 12+ 不会因多个重叠点的透明度而拦截穿透点击。
-        context is AccessibilityService -> WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-        else -> WindowManager.LayoutParams.TYPE_PHONE
+    fun type(context: Context): Int {
+        require(context is AccessibilityService) { "悬浮窗只能由无障碍服务创建" }
+        // 专用可信窗口无需 SYSTEM_ALERT_WINDOW，Android 12+ 也不会拦截重叠点的穿透点击。
+        return WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
     }
 
     @Suppress("DEPRECATION")

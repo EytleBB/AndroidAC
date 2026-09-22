@@ -5,20 +5,16 @@
     <string name="accessibility_service_label">连点器 无障碍服务</string>
     <string name="accessibility_service_description">用于在你指定的屏幕位置模拟点击（dispatchGesture）。本服务完全离线，不读取屏幕内容、不联网。</string>
 
-    <string name="guide_intro">首次使用需开启以下两项权限。</string>
+    <string name="guide_intro">首次使用只需开启无障碍服务。控制球不再要求“显示在其他应用上层”权限。</string>
 
-    <string name="guide_step_overlay">① 悬浮窗权限</string>
-    <string name="guide_step_accessibility">② 无障碍服务</string>
+    <string name="guide_step_accessibility">① 开启无障碍服务</string>
 
-    <string name="status_granted">状态：已授予 ✓</string>
-    <string name="status_not_granted">状态：未授予 ✗</string>
     <string name="status_enabled">状态：已开启 ✓</string>
     <string name="status_not_enabled">状态：未开启 ✗</string>
 
-    <string name="btn_open_overlay">去开启悬浮窗权限</string>
     <string name="btn_open_accessibility">去开启无障碍服务</string>
 
-    <string name="guide_step_interval">③ 点击间隔</string>
+    <string name="guide_step_interval">② 点击间隔</string>
     <string name="interval_value_fmt">当前间隔：%1$d ms（数值越小点击越快）</string>
     <string name="guide_usage">用法：开启权限后出现十字目标点与原来的圆形控制球。\n• 单击控制球：开始 / 停止，多个目标点按编号循环点击\n• 长按控制球：进入定位模式，展开 ＋ / －，此时可拖动目标点\n• ＋：添加目标点；－：删除最后一个，至少保留 1 个\n• 再次长按：收起 ＋ / － 并锁定位置；也可直接单击开始\n• 拖动控制球可移动它的位置，请避开目标点\n• 位置自动保存；最多添加 50 个目标点</string>
 
@@ -27,9 +23,9 @@
     <string name="locate_started">定位模式：已展开 ＋ / －，拖动目标点后再次长按控制球锁定</string>
     <string name="locate_finished">已锁定所有点击点，点 ▶ 按编号循环点击</string>
     <string name="open_target_first">请先打开需要连点的应用，再点 ▶</string>
-    <string name="overlay_failed">无法显示悬浮窗，请检查权限后重新打开连点器</string>
+    <string name="overlay_failed">无法显示控制球，请关闭并重新开启无障碍服务</string>
     <string name="screen_changed">屏幕尺寸已改变，已停止连点，请长按控制球重新定位</string>
 
     <string name="hint_restricted_settings">提示：若你是侧载（非应用商店）安装，开启无障碍前可能被「受限设置」拦截。请到「设置 → 应用 → 连点器 → 右上角菜单 → 允许受限设置」后，再回到无障碍页面开启本服务。</string>
-    <string name="hint_all_ready">两项权限均已就绪，可以开始使用。</string>
+    <string name="hint_all_ready">无障碍服务已就绪，可以开始使用。</string>
 </resources>

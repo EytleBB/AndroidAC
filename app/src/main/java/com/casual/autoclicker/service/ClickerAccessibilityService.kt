@@ -4,7 +4,6 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Point
-import android.provider.Settings
 import android.util.Log
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
@@ -43,9 +42,9 @@ class ClickerAccessibilityService : AccessibilityService() {
         ensureOverlays()
     }
 
-    /** 也由主页面调用，支持先开无障碍、后授予悬浮窗权限的顺序。 */
+    /** 创建无障碍专用悬浮窗，无需额外的“显示在其他应用上层”授权。 */
     fun ensureOverlays() {
-        if (!Settings.canDrawOverlays(this) || controlBall != null) return
+        if (controlBall != null) return
         try {
             clickLoop = ClickLoop(this)
             val saved = SettingsRepository.getClickPoints(this)
